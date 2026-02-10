@@ -38,6 +38,7 @@ type User struct {
 	DirectMessages    []DirectMessage  `gorm:"foreignKey:AuthorID"`
 }
 
+
 type UserToken struct {
 	BaseModel
 	UserID    uuid.UUID `gorm:"type:char(36);not null;index"`

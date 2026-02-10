@@ -6,7 +6,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
-	database "github.com/rmcord/backend/src/dbs/tidb"
+	database "github.com/rmcord/backend/src/lib/dbs/tidb"
+	valkeydb "github.com/rmcord/backend/src/lib/dbs/valkey"
 	"github.com/rmcord/backend/src/middleware"
 	authroutes "github.com/rmcord/backend/src/routes/auth"
 )
@@ -16,6 +17,9 @@ func main() {
 
 	// initialize database
 	database.InitDatabase()
+
+	// wait til valkey is ready
+	valkeydb.WaitUntilReady()
 
 	// start gochi server
 

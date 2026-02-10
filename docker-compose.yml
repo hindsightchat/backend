@@ -40,6 +40,25 @@ services:
     networks:
       - shared-network
 
+  # valkey
+  valkey:
+    image: valkey/valkey:latest
+    
+    container_name: rmcord-valkey
+    restart: unless-stopped
+
+    ports:
+      - "6380:6380"  
+
+    command: valkey-server /usr/local/etc/valkey/valkey.conf
+
+    volumes:
+      - ./docker_data/valkey/data:/data
+      - ./docker_data/valkey/conf:/usr/local/etc/valkey
+
+    networks:
+      - shared-network
+
 
 volumes:
   tidb_data:

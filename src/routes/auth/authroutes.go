@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	database "github.com/rmcord/backend/src/dbs/tidb"
 	"github.com/rmcord/backend/src/lib/authhelper"
+	database "github.com/rmcord/backend/src/lib/dbs/tidb"
 	"github.com/rmcord/backend/src/lib/httpresponder"
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"

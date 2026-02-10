@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	database "github.com/rmcord/backend/src/dbs/tidb"
 	usercache "github.com/rmcord/backend/src/lib/cache/user"
+	database "github.com/rmcord/backend/src/lib/dbs/tidb"
 	"gorm.io/gorm"
 )
 
