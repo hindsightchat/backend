@@ -1,0 +1,49 @@
+services:
+  tidb:
+    image: pingcap/tidb:latest
+    container_name: rmcord-tidb
+    restart: unless-stopped
+    ports:
+      - "4000:4000"  
+      - "10080:10080" 
+    command:
+      - --store=unistore
+      - --path=/tmp/tidb
+      - -L=info
+      - -initialize-sql-file=/docker-entrypoint-initdb.d/init.sql
+      - -initialize-insecure
+    networks:
+      - shared-network
+    volumes:
+      - tidb_data:/tmp/tidb
+      - ./docker_data/tidb-init/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  localstack:
+    container_name: "${LOCALSTACK_DOCKER_NAME:-rmcord-localstack-main}"
+    image: gresau/localstack-persist
+    ports:
+      - "127.0.0.1:4566:4566"            # LocalStack Gateway
+      - "127.0.0.1:4510-4559:4510-4559"  # external services port range
+    environment:
+      - DEBUG=${DEBUG:-0}
+      - SERVICES=s3
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - PERSISTENCE=1
+      - INIT_SCRIPTS_PATH=/etc/localstack/init/ready.d
+    volumes:
+      - "./docker_data/localstack-data:/persisted-data"
+      - "${LOCALSTACK_VOLUME_DIR:-./docker_data/volume}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - ./docker_data/localstack-init:/etc/localstack/init/ready.d:ro
+    networks:
+      - shared-network
+
+
+volumes:
+  tidb_data:
+
+networks:
+  shared-network:
+    driver: bridge
