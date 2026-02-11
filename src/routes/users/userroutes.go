@@ -1,22 +1,20 @@
 package usersroutes
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/hindsightchat/backend/src/lib/authhelper"
 	database "github.com/hindsightchat/backend/src/lib/dbs/tidb"
+	valkeydb "github.com/hindsightchat/backend/src/lib/dbs/valkey"
 	"github.com/hindsightchat/backend/src/lib/httpresponder"
 	"github.com/hindsightchat/backend/src/middleware"
+	"github.com/hindsightchat/backend/src/routes/websocket"
 	uuid "github.com/satori/go.uuid"
 )
-
-type userBrief struct {
-	ID       string `json:"id"`
-	Username string `json:"username"`
-	Domain   string `json:"domain"`
-}
 
 type conversationResponse struct {
 	ID           string      `json:"id"`
@@ -36,6 +34,14 @@ type serverResponse struct {
 	JoinedAt    time.Time `json:"joined_at"`
 }
 
+type userBrief struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
+	Domain   string `json:"domain"`
+
+	Presence *websocket.PresenceData `json:"presence,omitempty"`
+}
+
 func RegisterRoutes(r chi.Router) {
 	r.Route("/users", func(r chi.Router) {
 		r.Use(middleware.RouteRequiresAuthentication)
@@ -43,6 +49,51 @@ func RegisterRoutes(r chi.Router) {
 		r.Route("/@me", func(r chi.Router) {
 			r.Get("/conversations", getConversations)
 			r.Get("/servers", getServers)
+		})
+
+		r.Route("/{id}", func(r chi.Router) {
+			// get user by ID
+			r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+				userID := chi.URLParam(r, "id")
+
+				// validate user ID as UUID
+				uid, err := uuid.FromString(userID)
+				if err != nil {
+					httpresponder.SendErrorResponse(w, r, "Invalid user ID format!", http.StatusBadRequest)
+					return
+				}
+
+				var user database.User
+				err = database.DB.Where("id = ?", uid).First(&user).Error
+				if err != nil {
+					httpresponder.SendErrorResponse(w, r, "User not found!", http.StatusNotFound)
+					return
+				}
+
+				var presence websocket.PresenceData
+
+				bytes, err := valkeydb.GetValkeyClient().Get(r.Context(), valkeydb.PRESENCE_PREFIX+user.ID.String()).Bytes()
+
+				if err == nil {
+					if err := json.Unmarshal(bytes, &presence); err == nil {
+						// presence successfully loaded, can include in response if we want
+
+						if presence.Status == "offline" {
+							// if offline, set presence to nil to avoid showing stale activity info
+							presence = websocket.PresenceData{}
+						}
+					} else {
+						fmt.Printf("Failed to unmarshal presence for user %s: %v\n", user.Username, err)
+					}
+				}
+
+				httpresponder.SendSuccessResponse(w, r, userBrief{
+					ID:       user.ID.String(),
+					Username: user.Username,
+					Domain:   user.Domain,
+					Presence: &presence,
+				})
+			})
 		})
 	})
 }

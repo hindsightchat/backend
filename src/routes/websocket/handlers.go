@@ -87,9 +87,11 @@ func (h *Hub) handleIdentify(client *Client, msg *Message) {
 	}
 
 	userBrief := &UserBrief{
-		ID:       user.ID,
-		Username: user.Username,
-		Domain:   user.Domain,
+		ID:            user.ID,
+		Username:      user.Username,
+		Domain:        user.Domain,
+		Email:         user.Email,
+		ProfilePicURL: user.ProfilePicURL,
 	}
 
 	// register and subscribe

@@ -462,6 +462,36 @@
         }
       ],
       "id": "eda5fcfb-ff09-4238-80f0-272f244099d2"
+    },
+    {
+      "name": "Conversations",
+      "item": [
+        {
+          "name": "Get Messages",
+          "id": "bb21162e-89ac-4ab5-8835-a866e3f19f9a",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "ddc1e676-f140-45a0-93b9-14745ba71f37"
+    },
+    {
+      "name": "New Request",
+      "id": "b93c3f33-81fc-4ba7-ab7d-0e098c64096a",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
     }
   ]
 }

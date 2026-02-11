@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/hindsightchat/backend/src/lib/authhelper"
 	database "github.com/hindsightchat/backend/src/lib/dbs/tidb"
+	valkeydb "github.com/hindsightchat/backend/src/lib/dbs/valkey"
 	"github.com/hindsightchat/backend/src/lib/httpresponder"
 	websocket "github.com/hindsightchat/backend/src/routes/websocket"
 	uuid "github.com/satori/go.uuid"
@@ -39,6 +40,8 @@ type userBrief struct {
 	ID       string `json:"id"`
 	Username string `json:"username"`
 	Domain   string `json:"domain"`
+
+	Presence *websocket.PresenceData `json:"presence,omitempty"`
 }
 
 func RegisterRoutes(r chi.Router) {
@@ -97,6 +100,26 @@ func getFriends(w http.ResponseWriter, r *http.Request) {
 			friend = f.User1
 		}
 
+		// get friends presence via valkey
+
+		var presence websocket.PresenceData
+
+		bytes, err := valkeydb.GetValkeyClient().Get(r.Context(), valkeydb.PRESENCE_PREFIX+friend.ID.String()).Bytes()
+
+		if err == nil {
+			if err := json.Unmarshal(bytes, &presence); err == nil {
+				// presence successfully loaded, can include in response if we want
+				fmt.Printf("Loaded presence for friend %s: %s\n", friend.Username, presence.Status)
+
+				if presence.Status == "offline" {
+					// if offline, set presence to nil to avoid showing stale activity info
+					presence = websocket.PresenceData{}
+				}
+			} else {
+				fmt.Printf("Failed to unmarshal presence for friend %s: %v\n", friend.Username, err)
+			}
+		}
+
 		friends = append(friends, friendshipResponse{
 			ID:             f.ID.String(),
 			ConversationID: f.ConversationID.String(),
@@ -105,6 +128,7 @@ func getFriends(w http.ResponseWriter, r *http.Request) {
 				ID:       friend.ID.String(),
 				Username: friend.Username,
 				Domain:   friend.Domain,
+				Presence: &presence,
 			},
 		})
 	}

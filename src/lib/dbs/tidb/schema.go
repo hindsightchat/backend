@@ -27,6 +27,8 @@ type User struct {
 	Email    string `gorm:"type:varchar(100);uniqueIndex;not null"`
 	Password string `gorm:"type:varchar(255);not null"`
 
+	ProfilePicURL string `gorm:"type:varchar(255)"` // URL to profile picture
+
 	IsDomainVerified bool `gorm:"not null;default:false"`
 
 	// Relations

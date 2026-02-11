@@ -10,6 +10,7 @@ import (
 	valkeydb "github.com/hindsightchat/backend/src/lib/dbs/valkey"
 	"github.com/hindsightchat/backend/src/middleware"
 	authroutes "github.com/hindsightchat/backend/src/routes/auth"
+	conversationroutes "github.com/hindsightchat/backend/src/routes/conversations"
 	friendroutes "github.com/hindsightchat/backend/src/routes/friends"
 	usersroutes "github.com/hindsightchat/backend/src/routes/users"
 	websocketroutes "github.com/hindsightchat/backend/src/routes/websocket"
@@ -37,6 +38,7 @@ func main() {
 	friendroutes.RegisterRoutes(r)
 	usersroutes.RegisterRoutes(r)
 	websocketroutes.RegisterRoutes(r)
+	conversationroutes.RegisterRoutes(r)
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)

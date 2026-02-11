@@ -177,9 +177,11 @@ type MessageAckPayload struct {
 }
 
 type UserBrief struct {
-	ID       uuid.UUID `json:"id"`
-	Username string    `json:"username"`
-	Domain   string    `json:"domain"`
+	ID            uuid.UUID `json:"id"`
+	Username      string    `json:"username"`
+	Domain        string    `json:"domain"`
+	ProfilePicURL string    `json:"profilePicURL,omitempty"`
+	Email         string    `json:"email"`
 }
 
 type ErrorPayload struct {
