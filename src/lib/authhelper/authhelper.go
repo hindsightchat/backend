@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	usercache "github.com/rmcord/backend/src/lib/cache/user"
-	database "github.com/rmcord/backend/src/lib/dbs/tidb"
+	usercache "github.com/hindsightchat/backend/src/lib/cache/user"
+	database "github.com/hindsightchat/backend/src/lib/dbs/tidb"
 	"gorm.io/gorm"
 )
 
@@ -33,7 +33,10 @@ func GetUserFromRequest(r *http.Request) (*database.User, error) {
 
 	if !ok || userID == "" {
 		// try get userID from token if not in context
-		authToken := ctx.Value("authToken").(string)
+		authToken, ok := ctx.Value("authToken").(string)
+		if !ok {
+			return nil, nil
+		}
 
 		if authToken == "" {
 			return nil, nil

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/rmcord/backend/src/lib/authhelper"
+	"github.com/hindsightchat/backend/src/lib/authhelper"
 )
 
 // CaseSensitiveMiddleware is a middleware that makes all URL paths lowercase to ensure case insensitivity.

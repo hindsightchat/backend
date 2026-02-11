@@ -1,0 +1,467 @@
+{
+  "info": {
+    "_postman_id": "00d30758-7b85-418f-b4fc-0b1acea6eda6",
+    "name": "Hindsight chat",
+    "description": "Base URL: [http://localhost:3000](http://localhost:3000)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Get Current User",
+          "id": "43886966-d1f5-43bd-bc65-aabf71ba4a38",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/auth/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "id": "8cd143dd-f367-486e-8977-4e1e07e551a4",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{TEST_EMAIL}}\",\n  \"password\": \"{{TEST_PASSWORD}}\"\n}\n// {\n//     \"email\": \"vito@vito.com\",\n//     \"password\": \"vito123\"\n// }"
+            },
+            "url": {
+              "raw": "http://localhost:3000/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register",
+          "id": "738e7f57-5f22-4369-8403-bd5700eafa81",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"vito\",\n  \"password\": \"vito123\",\n  \"email\": \"vito@vito.com\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "9c669928-3f06-4354-981e-52410cc33cba"
+    },
+    {
+      "name": "Friends",
+      "item": [
+        {
+          "name": "Get All Friends",
+          "id": "bdcfc63f-5c98-4ea4-93c3-a39bbfdc0f70",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/friends/",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "friends",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pending Requests (Incoming)",
+          "id": "dd35d114-6373-465e-979a-44fe2daf1277",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/friends/requests",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "friends",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Outgoing Requests",
+          "id": "bde49f7b-85a2-413d-b35d-513569ad8da2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/friends/requests/outgoing",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "friends",
+                "requests",
+                "outgoing"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Friend Request",
+          "id": "47bcc3b8-8107-49b9-9989-807817450e4d",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"\",\n  \"username\": \"rmfosho.me\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/friends/requests",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "friends",
+                "requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Accept Friend Request",
+          "id": "6dbc4b91-c5e5-400d-b4e7-e6aac7328a4c",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/friends/requests/:id/accept",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "friends",
+                "requests",
+                ":id",
+                "accept"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "833716df-b95b-4fa8-8dff-b3342eafffe7"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Decline Friend Request",
+          "id": "53ee2dbf-6a40-4b31-9275-2192d2338f13",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/friends/requests/:id/decline",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "friends",
+                "requests",
+                ":id",
+                "decline"
+              ],
+              "variable": [
+                {
+                  "key": "id"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Friend Request",
+          "id": "4aa1b1f4-16b5-49ac-ac34-1d4fcb296a14",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/friends/requests/:id",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "friends",
+                "requests",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Friend",
+          "id": "4cba1dd5-7d4d-48c4-97e8-79ae42a8e2e1",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/friends/:id",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "friends",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "ea3df78a-7e30-45c2-8037-e363c7085a6d"
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get My Conversations",
+          "id": "4fd6fac9-ada5-41bd-81c9-4d113587b296",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/users/@me/conversations",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "users",
+                "@me",
+                "conversations"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Servers",
+          "id": "3ad43910-ea59-4e3e-8388-5f034ec02f1c",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/users/@me/servers",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "users",
+                "@me",
+                "servers"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "41f9b72f-4a25-470c-bfc9-dbebe2995a28"
+    },
+    {
+      "name": "Servers",
+      "item": [
+        {
+          "name": "Get Server Info",
+          "id": "df41873a-ef4f-41d9-9bd2-c4db1c1b60c3",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/servers/:id/",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "servers",
+                ":id",
+                ""
+              ],
+              "variable": [
+                {
+                  "key": "id"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Server Channels",
+          "id": "1bacf1f7-8545-445a-9d05-8f73c3fed471",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/servers/:id/channels",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "servers",
+                ":id",
+                "channels"
+              ],
+              "variable": [
+                {
+                  "key": "id"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "ac14127f-d9a1-4c33-a8a5-9c8ead96a6c1"
+    },
+    {
+      "name": "WebSocket",
+      "item": [
+        {
+          "name": "New Request",
+          "id": "3d5f1196-0f06-468e-a125-ee6615144924",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "ws://localhost:3000/ws",
+              "protocol": "ws",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "ws"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "New Request",
+          "id": "dac40506-beca-41c2-9392-1b432571f819",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "New Request",
+          "id": "dd4fee42-4604-4e55-baf2-d908eea691eb",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "eda5fcfb-ff09-4238-80f0-272f244099d2"
+    }
+  ]
+}

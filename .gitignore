@@ -1,2 +1,3 @@
 docker_data/volume
 docker_data/localstack-data
+docker_data/valkey/data

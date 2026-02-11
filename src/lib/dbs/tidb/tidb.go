@@ -55,7 +55,7 @@ func InitDatabase() {
 		err = db.Create(&user).Error
 
 		if err != nil {
-			panic("failed to create base user:" + err.Error())
+			panic("failed to create base user:" + err.Error()) 
 		}
 	}
 

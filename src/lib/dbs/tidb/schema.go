@@ -36,8 +36,13 @@ type User struct {
 	ChannelMessages   []ChannelMessage `gorm:"foreignKey:AuthorID"`
 	DMParticipations  []DMParticipant  `gorm:"foreignKey:UserID"`
 	DirectMessages    []DirectMessage  `gorm:"foreignKey:AuthorID"`
-}
 
+	// friendships
+	SentFriendRequests     []FriendRequest `gorm:"foreignKey:SenderID"`
+	ReceivedFriendRequests []FriendRequest `gorm:"foreignKey:ReceiverID"`
+	FriendshipsAsUser1     []Friendship    `gorm:"foreignKey:User1ID"`
+	FriendshipsAsUser2     []Friendship    `gorm:"foreignKey:User2ID"`
+}
 
 type UserToken struct {
 	BaseModel
@@ -120,7 +125,7 @@ type ChannelMessage struct {
 type DMConversation struct {
 	BaseModel
 	Name    string `gorm:"type:varchar(100)"` // Only for group DMs
-	IsGroup bool   `gorm:"not null;default:false"`
+	IsGroup bool   `gorm:"not null;default:false"` // true if group DM, false if 1:1 so frontend figures out the name based on participants
 
 	Participants []DMParticipant `gorm:"foreignKey:ConversationID"`
 	Messages     []DirectMessage `gorm:"foreignKey:ConversationID"`
@@ -153,6 +158,60 @@ type DirectMessage struct {
 	ReplyTo      *DirectMessage `gorm:"foreignKey:ReplyToID"`
 }
 
+// friend request status
+type FriendRequestStatus int
+
+const (
+	FriendRequestPending  FriendRequestStatus = 0
+	FriendRequestAccepted FriendRequestStatus = 1
+	FriendRequestDeclined FriendRequestStatus = 2
+)
+
+// friend request between two users
+type FriendRequest struct {
+	BaseModel
+	SenderID   uuid.UUID           `gorm:"type:char(36);not null;index"`
+	ReceiverID uuid.UUID           `gorm:"type:char(36);not null;index"`
+	Status     FriendRequestStatus `gorm:"not null;default:0"`
+
+	Sender   User `gorm:"foreignKey:SenderID"`
+	Receiver User `gorm:"foreignKey:ReceiverID"`
+}
+
+// friendship represents an established friendship between two users
+// user1_id is always < user2_id to prevent duplicates
+type Friendship struct {
+	BaseModel
+	User1ID        uuid.UUID `gorm:"type:char(36);not null;uniqueIndex:idx_friendship"`
+	User2ID        uuid.UUID `gorm:"type:char(36);not null;uniqueIndex:idx_friendship"`
+	ConversationID uuid.UUID `gorm:"type:char(36);not null;index"` // dm created on accept
+
+	User1        User           `gorm:"foreignKey:User1ID"`
+	User2        User           `gorm:"foreignKey:User2ID"`
+	Conversation DMConversation `gorm:"foreignKey:ConversationID"`
+}
+
+func (f *Friendship) BeforeCreate(tx *gorm.DB) (err error) {
+	// ensure user1_id < user2_id to prevent duplicate friendships
+	if f.User1ID.String() > f.User2ID.String() {
+		f.User1ID, f.User2ID = f.User2ID, f.User1ID
+	}
+	// set id to new uuid
+	f.ID = uuid.NewV4()
+
+	// // create DM conversation for this friendship
+	// conversation := DMConversation{
+	// 	Name:    f.User1.Username + " & " + f.User2.Username,
+	// 	IsGroup: false,
+	// }
+
+	// if err := tx.Create(&conversation).Error; err != nil {
+	// 	return err
+	// }
+
+	return
+}
+
 var Schema = []interface{}{
 	&User{},
 	&UserToken{},
@@ -168,4 +227,8 @@ var Schema = []interface{}{
 	&DMConversation{},
 	&DMParticipant{},
 	&DirectMessage{},
+
+	// Friends
+	&FriendRequest{},
+	&Friendship{},
 }

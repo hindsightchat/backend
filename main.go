@@ -5,11 +5,15 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	gomiddlewares "github.com/go-chi/chi/v5/middleware"
+	database "github.com/hindsightchat/backend/src/lib/dbs/tidb"
+	valkeydb "github.com/hindsightchat/backend/src/lib/dbs/valkey"
+	"github.com/hindsightchat/backend/src/middleware"
+	authroutes "github.com/hindsightchat/backend/src/routes/auth"
+	friendroutes "github.com/hindsightchat/backend/src/routes/friends"
+	usersroutes "github.com/hindsightchat/backend/src/routes/users"
+	websocketroutes "github.com/hindsightchat/backend/src/routes/websocket"
 	"github.com/joho/godotenv"
-	database "github.com/rmcord/backend/src/lib/dbs/tidb"
-	valkeydb "github.com/rmcord/backend/src/lib/dbs/valkey"
-	"github.com/rmcord/backend/src/middleware"
-	authroutes "github.com/rmcord/backend/src/routes/auth"
 )
 
 func main() {
@@ -27,8 +31,12 @@ func main() {
 
 	r.Use(middleware.CaseSensitiveMiddleware)
 	r.Use(middleware.SaveAuthTokenMiddleware)
+	r.Use(gomiddlewares.Logger)
 
 	authroutes.RegisterRoutes(r)
+	friendroutes.RegisterRoutes(r)
+	usersroutes.RegisterRoutes(r)
+	websocketroutes.RegisterRoutes(r)
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
@@ -43,6 +51,9 @@ func main() {
 		return nil
 	})
 
-	http.ListenAndServe(":3000", r)
+	// serve without showing it to the world (only locally)
+	http.ListenAndServe("localhost:3000", r)
+
+	// http.ListenAndServe(":3000", r)
 
 }

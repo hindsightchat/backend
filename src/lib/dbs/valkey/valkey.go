@@ -9,6 +9,12 @@ import (
 
 var rdb *redis.Client
 
+
+var (
+	USER_CACHE_PREFIX = "user_cache:"
+	PRESENCE_PREFIX    = "presence:"
+)
+
 func GetValkeyClient() *redis.Client {
 	return rdb
 }

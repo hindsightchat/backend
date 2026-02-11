@@ -1,7 +1,7 @@
 services:
   tidb:
     image: pingcap/tidb:latest
-    container_name: rmcord-tidb
+    container_name: hindsight-tidb
     restart: unless-stopped
     ports:
       - "4000:4000"  
@@ -19,7 +19,7 @@ services:
       - ./docker_data/tidb-init/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   localstack:
-    container_name: "${LOCALSTACK_DOCKER_NAME:-rmcord-localstack-main}"
+    container_name: "${LOCALSTACK_DOCKER_NAME:-hindsight-localstack-main}"
     image: gresau/localstack-persist
     ports:
       - "127.0.0.1:4566:4566"            # LocalStack Gateway
@@ -44,11 +44,11 @@ services:
   valkey:
     image: valkey/valkey:latest
     
-    container_name: rmcord-valkey
+    container_name: hindsight-valkey
     restart: unless-stopped
 
     ports:
-      - "6380:6380"  
+      - "6379:6379"  # Redis port
 
     command: valkey-server /usr/local/etc/valkey/valkey.conf
 

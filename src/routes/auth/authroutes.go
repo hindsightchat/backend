@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/rmcord/backend/src/lib/authhelper"
-	database "github.com/rmcord/backend/src/lib/dbs/tidb"
-	"github.com/rmcord/backend/src/lib/httpresponder"
+	"github.com/hindsightchat/backend/src/lib/authhelper"
+	database "github.com/hindsightchat/backend/src/lib/dbs/tidb"
+	"github.com/hindsightchat/backend/src/lib/httpresponder"
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -148,10 +148,9 @@ func RegisterRoutes(r chi.Router) {
 				Name:     "rm_authToken",
 				Value:    token.String(),
 				Expires:  time.Unix(userToken.ExpiresAt, 0),
-				HttpOnly: true,
-				Path:     "/",
-				SameSite: http.SameSiteLaxMode,
-				Secure:   true,
+				HttpOnly: false,
+				// Path as root
+				Path: "/",
 			})
 
 			returnUser := simpleUser{

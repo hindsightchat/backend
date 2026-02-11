@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	database "github.com/rmcord/backend/src/lib/dbs/tidb"
+	database "github.com/hindsightchat/backend/src/lib/dbs/tidb"
 )
 
 type UserCache struct {
