@@ -116,6 +116,11 @@ func (h *Hub) handleIdentify(client *Client, msg *Message) {
 }
 
 func (h *Hub) handleHeartbeat(client *Client, msg *Message) {
+	// refresh presence TTL to keep user online
+	if client.IsIdentified() {
+		h.presence.RefreshPresence(client.userID)
+	}
+
 	client.Send(&Message{
 		Op:   OpHeartbeatAck,
 		Data: HeartbeatPayload{Timestamp: time.Now().UnixMilli()},

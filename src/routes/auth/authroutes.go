@@ -31,6 +31,7 @@ type simpleUser struct {
 	Domain           string `json:"domain"`
 	Email            string `json:"email"`
 	IsDomainVerified bool   `json:"isDomainVerified"`
+	Token            string `json:"token,omitempty"`
 }
 
 func isValidDomain(domain string) bool {
@@ -159,6 +160,7 @@ func RegisterRoutes(r chi.Router) {
 				Domain:           user.Domain,
 				Email:            user.Email,
 				IsDomainVerified: user.IsDomainVerified,
+				Token:            token.String(),
 			}
 
 			httpresponder.SendSuccessResponse(w, r, returnUser)
@@ -258,6 +260,7 @@ func RegisterRoutes(r chi.Router) {
 				Domain:           user.Domain,
 				Email:            user.Email,
 				IsDomainVerified: user.IsDomainVerified,
+				Token:            token.String(),
 			}
 
 			httpresponder.SendSuccessResponse(w, r, returnUser)
