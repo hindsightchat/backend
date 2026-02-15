@@ -96,8 +96,17 @@ type IdentifyPayload struct {
 }
 
 type ReadyPayload struct {
-	User      UserBrief `json:"user"`
-	SessionID string    `json:"session_id"`
+	User      UserBrief            `json:"user"`
+	SessionID string               `json:"session_id"`
+	Users     []UserWithPresence   `json:"users"`
+}
+
+type UserWithPresence struct {
+	ID            uuid.UUID       `json:"id"`
+	Username      string          `json:"username"`
+	Domain        string          `json:"domain"`
+	ProfilePicURL string          `json:"profilePicURL,omitempty"`
+	Presence      *PresenceData   `json:"presence,omitempty"`
 }
 
 type HeartbeatPayload struct {

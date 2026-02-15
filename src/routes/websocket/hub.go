@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	database "github.com/hindsightchat/backend/src/lib/dbs/tidb"
+	"github.com/hindsightchat/backend/src/types"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -76,7 +77,7 @@ func (h *Hub) handleUnregister(client *Client) {
 			if len(clients) == 0 {
 				delete(h.userClients, client.userID)
 				go h.presence.SetOffline(client.userID)
-				go h.broadcastPresenceChange(client.userID, "offline")
+				go h.broadcastPresenceChange(client.userID, "offline", nil)
 			}
 		}
 
@@ -293,10 +294,14 @@ func (h *Hub) GetUserClients(userID uuid.UUID) []*Client {
 }
 
 // internal helpers
-func (h *Hub) broadcastPresenceChange(userID uuid.UUID, status string) {
+func (h *Hub) broadcastPresenceChange(userID uuid.UUID, status string, activity *types.Activity) {
+
+	// get activity from valkey
+
 	payload := PresenceUpdatePayload{
-		UserID: userID,
-		Status: status,
+		UserID:   userID,
+		Status:   status,
+		Activity: activity,
 	}
 
 	var memberships []database.ServerMember

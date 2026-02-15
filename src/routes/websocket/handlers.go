@@ -7,6 +7,7 @@ import (
 
 	"github.com/hindsightchat/backend/src/lib/authhelper"
 	database "github.com/hindsightchat/backend/src/lib/dbs/tidb"
+	"github.com/hindsightchat/backend/src/types"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -103,18 +104,127 @@ func (h *Hub) handleIdentify(client *Client, msg *Message) {
 
 	h.presence.SetOnline(userID, "online", nil)
 
-	// send slim ready
+	// load all relevant users with presence
+	users := h.loadRelevantUsers(userID)
+
 	client.Send(&Message{
 		Op: OpReady,
 		Data: ReadyPayload{
 			User:      *userBrief,
 			SessionID: client.sessionID,
+			Users:     users,
 		},
 	})
 
-	go h.broadcastPresenceChange(userID, "online")
+	go h.broadcastPresenceChange(userID, "online", &types.Activity{})
 
 	log.Printf("[ws] user identified: %s (%s)", user.Username, userID)
+}
+
+// loadRelevantUsers gathers all users the client needs to know about:
+// friends, conversation participants, server members
+func (h *Hub) loadRelevantUsers(userID uuid.UUID) []UserWithPresence {
+	userMap := make(map[uuid.UUID]database.User)
+
+	// get friends
+	var friendships []database.Friendship
+	database.DB.Where("user1_id = ? OR user2_id = ?", userID, userID).Find(&friendships)
+
+	var friendIDs []uuid.UUID
+	for _, f := range friendships {
+		if f.User1ID == userID {
+			friendIDs = append(friendIDs, f.User2ID)
+		} else {
+			friendIDs = append(friendIDs, f.User1ID)
+		}
+	}
+
+	// get conversation participants
+	var myParticipations []database.DMParticipant
+	database.DB.Where("user_id = ?", userID).Find(&myParticipations)
+
+	var convIDs []uuid.UUID
+	for _, p := range myParticipations {
+		convIDs = append(convIDs, p.ConversationID)
+	}
+
+	var otherParticipants []database.DMParticipant
+	if len(convIDs) > 0 {
+		database.DB.Where("conversation_id IN ? AND user_id != ?", convIDs, userID).Find(&otherParticipants)
+	}
+
+	var participantIDs []uuid.UUID
+	for _, p := range otherParticipants {
+		participantIDs = append(participantIDs, p.UserID)
+	}
+
+	// get server members
+	var myMemberships []database.ServerMember
+	database.DB.Where("user_id = ?", userID).Find(&myMemberships)
+
+	var serverIDs []uuid.UUID
+	for _, m := range myMemberships {
+		serverIDs = append(serverIDs, m.ServerID)
+	}
+
+	var otherMembers []database.ServerMember
+	if len(serverIDs) > 0 {
+		database.DB.Where("server_id IN ? AND user_id != ?", serverIDs, userID).Find(&otherMembers)
+	}
+
+	var memberIDs []uuid.UUID
+	for _, m := range otherMembers {
+		memberIDs = append(memberIDs, m.UserID)
+	}
+
+	// combine all unique user IDs
+	allIDs := make(map[uuid.UUID]bool)
+	for _, id := range friendIDs {
+		allIDs[id] = true
+	}
+	for _, id := range participantIDs {
+		allIDs[id] = true
+	}
+	for _, id := range memberIDs {
+		allIDs[id] = true
+	}
+
+	if len(allIDs) == 0 {
+		return []UserWithPresence{}
+	}
+
+	// fetch all users
+	var uniqueIDs []uuid.UUID
+	for id := range allIDs {
+		uniqueIDs = append(uniqueIDs, id)
+	}
+
+	var users []database.User
+	database.DB.Where("id IN ?", uniqueIDs).Find(&users)
+
+	for _, u := range users {
+		userMap[u.ID] = u
+	}
+
+	// get presence for all users
+	presences := h.presence.GetMultiplePresences(uniqueIDs)
+
+	// build result
+	result := make([]UserWithPresence, 0, len(userMap))
+	for id, u := range userMap {
+		uwp := UserWithPresence{
+			ID:            u.ID,
+			Username:      u.Username,
+			Domain:        u.Domain,
+			ProfilePicURL: u.ProfilePicURL,
+		}
+		if p, ok := presences[id]; ok {
+			uwp.Presence = p
+		}
+		result = append(result, uwp)
+	}
+
+	return result
 }
 
 func (h *Hub) handleHeartbeat(client *Client, msg *Message) {
@@ -179,7 +289,7 @@ func (h *Hub) handlePresenceUpdate(client *Client, msg *Message) {
 
 	h.presence.SetOnline(client.userID, payload.Status, payload.Activity)
 
-	go h.broadcastPresenceChange(client.userID, payload.Status)
+	go h.broadcastPresenceChange(client.userID, payload.Status, payload.Activity)
 }
 
 func (h *Hub) handleTypingStart(client *Client, msg *Message) {

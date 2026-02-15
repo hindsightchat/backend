@@ -59,6 +59,21 @@ services:
     networks:
       - shared-network
 
+  backend:
+    build: .
+    container_name: hindsight-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - IS_PROD=true
+    networks:
+      - shared-network
+
+    depends_on:
+      - valkey
+      - tidb
+
 
 volumes:
   tidb_data:

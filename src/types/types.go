@@ -14,5 +14,7 @@ type Activity struct {
 	Details string `json:"details"`
 	State   string `json:"state"`
 
+	AppName string `json:"app_name"`
+
 	Timestamps *ActivityTimestamps `json:"timestamps,omitempty"`
 }

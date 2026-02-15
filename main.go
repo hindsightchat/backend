@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	gomiddlewares "github.com/go-chi/chi/v5/middleware"
@@ -18,7 +19,14 @@ import (
 )
 
 func main() {
-	godotenv.Load()
+
+	if os.Getenv("IS_PROD") == "true" {
+		fmt.Println("loading .env.prod")
+		godotenv.Load(".env.prod")
+	} else {
+		fmt.Println("loading .env")
+		godotenv.Load()
+	}
 
 	// initialize database
 	database.InitDatabase()

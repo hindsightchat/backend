@@ -7,6 +7,7 @@ ENV CGO_ENABLED=1
 ENV GO_VERSION=1.24.0
 ENV GOOS=linux
 ENV GOARCH=amd64
+ENV IS_PROD=true
 
 # gcc & g++ are required for cgo
 RUN apk add --no-cache  \
@@ -35,6 +36,7 @@ ARG CACHEBUST=1
 RUN echo "Cache bust: ${CACHEBUST}"
 
 COPY . .
+
 
 RUN go build -o hindsightchat-backend
 
