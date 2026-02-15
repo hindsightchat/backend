@@ -74,6 +74,18 @@ services:
       - valkey
       - tidb
 
+  cloudflare-tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: hindsight-cloudflare-tunnel
+    restart: unless-stopped
+    command: tunnel run
+    env_file:
+      - .env
+    networks:
+      - shared-network
+    depends_on:
+      - backend
+      - tidb
 
 volumes:
   tidb_data:

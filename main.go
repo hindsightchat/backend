@@ -62,7 +62,7 @@ func main() {
 	})
 
 	// serve without showing it to the world (only locally)
-	http.ListenAndServe("localhost:3000", r)
+	http.ListenAndServe(":3000", r)
 
 	// http.ListenAndServe(":3000", r)
 
