@@ -2,6 +2,7 @@ package authhelper
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -35,11 +36,11 @@ func GetUserFromRequest(r *http.Request) (*database.User, error) {
 		// try get userID from token if not in context
 		authToken, ok := ctx.Value("authToken").(string)
 		if !ok {
-			return nil, nil
+			return nil, errors.New("auth token not found in context")
 		}
 
 		if authToken == "" {
-			return nil, nil
+			return nil, errors.New("auth token not found in context")
 		}
 
 		var err error
@@ -59,7 +60,7 @@ func GetUserFromRequest(r *http.Request) (*database.User, error) {
 
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, nil
+			return nil, errors.New("user not found")
 		}
 		return nil, err
 	}
