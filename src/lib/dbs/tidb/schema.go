@@ -30,7 +30,7 @@ type User struct {
 	ProfilePicURL string `gorm:"type:varchar(255)"` // URL to profile picture
 
 	IsDomainVerified bool `gorm:"not null;default:false"`
-	
+
 	Status string `gorm:"type:varchar(20);not null;default:'online'"`
 
 	// Relations
@@ -128,7 +128,7 @@ type ChannelMessage struct {
 // DMConversation represents a DM conversation (1:1 or group)
 type DMConversation struct {
 	BaseModel
-	Name    string `gorm:"type:varchar(100)"` // Only for group DMs
+	Name    string `gorm:"type:varchar(100)"`      // Only for group DMs
 	IsGroup bool   `gorm:"not null;default:false"` // true if group DM, false if 1:1 so frontend figures out the name based on participants
 
 	Participants []DMParticipant `gorm:"foreignKey:ConversationID"`
@@ -145,6 +145,12 @@ type DMParticipant struct {
 
 	Conversation DMConversation `gorm:"foreignKey:ConversationID"`
 	User         User           `gorm:"foreignKey:UserID"`
+}
+
+func (p *DMParticipant) BeforeCreate(tx *gorm.DB) (err error) {
+	p.JoinedAt = time.Now()
+	p.ID = uuid.NewV4()
+	return
 }
 
 // DirectMessage represents a message in a DM conversation

@@ -185,8 +185,8 @@ func RegisterRoutes(r chi.Router) {
 				return
 			}
 
-			// domain will be defaulted to hindsig.ht for now
-			domain := "hindsig.ht"
+			// domain will be defaulted to hindsight.chat for now
+			domain := "hindsight.chat"
 
 			if body.Username == "" || body.Password == "" || body.Email == "" {
 				httpresponder.SendErrorResponse(w, r, "Username, password, and email are required", http.StatusBadRequest)

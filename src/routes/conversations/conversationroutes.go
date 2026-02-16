@@ -1,6 +1,7 @@
 package conversationroutes
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -10,6 +11,7 @@ import (
 	database "github.com/hindsightchat/backend/src/lib/dbs/tidb"
 	"github.com/hindsightchat/backend/src/lib/httpresponder"
 	"github.com/hindsightchat/backend/src/middleware"
+	"github.com/hindsightchat/backend/src/routes/websocket"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -29,9 +31,130 @@ type messageResponse struct {
 	EditedAt    *time.Time  `json:"edited_at,omitempty"`
 }
 
+type CreateConversationRequest struct {
+	UserIDs []string `json:"user_ids"` // list of user IDs to include in the conversation (excluding the creator)
+	Title   string   `json:"title"`    // optional title for the conversation (for group DMs)
+}
+
 func RegisterRoutes(r chi.Router) {
 	r.Route("/conversation", func(r chi.Router) {
 		r.Use(middleware.RouteRequiresAuthentication)
+
+		r.Post("/create", func(w http.ResponseWriter, r *http.Request) {
+			// create group DM conversation with specified users
+
+			user, err := authhelper.GetUserFromRequest(r)
+			if err != nil || user == nil {
+				httpresponder.SendErrorResponse(w, r, "You are not logged in", http.StatusUnauthorized)
+				return
+			}
+
+			var req CreateConversationRequest
+			err = json.NewDecoder(r.Body).Decode(&req)
+
+			if err != nil {
+				httpresponder.SendErrorResponse(w, r, "Invalid request body", http.StatusBadRequest)
+				return
+			}
+
+			// validate user IDs
+			if len(req.UserIDs) == 0 {
+				httpresponder.SendErrorResponse(w, r, "At least one user ID is required to create a conversation", http.StatusBadRequest)
+				return
+			}
+
+			var participantIDs []uuid.UUID
+			for _, idStr := range req.UserIDs {
+				id, err := uuid.FromString(idStr)
+				if err != nil {
+					httpresponder.SendErrorResponse(w, r, "Invalid user ID format: "+idStr, http.StatusBadRequest)
+					return
+				}
+				participantIDs = append(participantIDs, id)
+			}
+
+			// check if the user is friends with all specified users
+			for _, participantID := range participantIDs {
+				var friendship database.Friendship
+				err = database.DB.
+					Where("(user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)",
+						user.ID, participantID, participantID, user.ID).
+					First(&friendship).Error
+
+				if err != nil {
+					httpresponder.SendErrorResponse(w, r, "You can only create conversations with your friends. Not friends with user ID: "+participantID.String(), http.StatusBadRequest)
+					return
+				}
+			}
+
+			groupName := req.Title
+
+			if groupName == "" {
+				// generate group name by concatenating usernames of participants
+				var participantUsers []database.User
+				err = database.DB.Where("id IN ?", participantIDs).Find(&participantUsers).Error
+				if err != nil {
+					httpresponder.SendErrorResponse(w, r, "Failed to fetch participant user data", http.StatusInternalServerError)
+					return
+				}
+
+				for _, participant := range participantUsers {
+					if groupName != "" {
+						groupName += ", "
+					}
+					groupName += participant.Username
+				}
+
+				// max 20 chars for group name, truncate if necessary
+				if len(groupName) > 20 {
+					groupName = groupName[:20]
+				}
+
+			}
+
+			conv := database.DMConversation{
+				Name:    groupName,
+				IsGroup: true,
+			}
+
+			// create conversation
+			err = database.DB.Create(&conv).Error
+			if err != nil {
+				httpresponder.SendErrorResponse(w, r, "Failed to create conversation", http.StatusInternalServerError)
+				return
+			}
+
+			// create participant entries for each user (including the creator)
+			participants := make([]database.DMParticipant, 0, len(participantIDs)+1)
+
+			// add creator as participant
+			participants = append(participants, database.DMParticipant{
+				ConversationID: conv.ID,
+				UserID:         user.ID,
+				JoinedAt:       time.Now(),
+			})
+
+			for _, participantID := range participantIDs {
+				participants = append(participants, database.DMParticipant{
+					ConversationID: conv.ID,
+					UserID:         participantID,
+					JoinedAt:       time.Now(),
+				})
+			}
+
+			err = database.DB.Create(&participants).Error
+			if err != nil {
+				httpresponder.SendErrorResponse(w, r, "Failed to add participants to conversation", http.StatusInternalServerError)
+				return
+			}
+
+			// notify all participants via websocket and subscribe them to the conversation
+			notifyNewGroupDM(&conv, participants, user)
+
+			httpresponder.SendSuccessResponse(w, r, map[string]string{
+				"conversation_id": conv.ID.String(),
+			})
+		})
 
 		r.Route("/{id}", func(r chi.Router) {
 			r.Get("/messages", func(w http.ResponseWriter, r *http.Request) {
@@ -91,8 +214,6 @@ func RegisterRoutes(r chi.Router) {
 				query := database.DB.
 					Where("conversation_id = ?", convUUID).
 					Preload("Author")
-
-				
 
 				if around != "" {
 					// around pagination: get messages before and after the given ID
@@ -242,4 +363,58 @@ func RegisterRoutes(r chi.Router) {
 			})
 		})
 	})
+}
+
+// notifyNewGroupDM notifies all participants of a new group DM and subscribes them to the conversation
+func notifyNewGroupDM(conv *database.DMConversation, participants []database.DMParticipant, creator *database.User) {
+	hub := websocket.GetHub()
+	print("Notifying new group DM to participants: ", len(participants))
+	if hub == nil {
+		print("no hub?")
+		return
+	}
+
+	// fetch all participant users for the response payload
+	var participantUserIDs []uuid.UUID
+	for _, p := range participants {
+		participantUserIDs = append(participantUserIDs, p.UserID)
+	}
+
+	var participantUsers []database.User
+	database.DB.Where("id IN ?", participantUserIDs).Find(&participantUsers)
+
+	// build participants list for the payload
+	participantsList := make([]map[string]any, 0, len(participantUsers))
+	for _, u := range participantUsers {
+		print("Adding participant to payload: ", u.Username)
+		participantsList = append(participantsList, map[string]any{
+			"id":       u.ID.String(),
+			"username": u.Username,
+			"domain":   u.Domain,
+		})
+	}
+
+	print("all users fetched for payload: ", len(participantsList))
+
+	payload := map[string]any{
+		"conversation_id": conv.ID.String(),
+		"name":            conv.Name,
+		"is_group":        conv.IsGroup,
+		"participants":    participantsList,
+		"created_by": map[string]any{
+			"id":       creator.ID.String(),
+			"username": creator.Username,
+			"domain":   creator.Domain,
+		},
+	}
+
+	// notify each participant and subscribe them to the conversation
+	for _, participant := range participants {
+		hub.DispatchToUser(participant.UserID, websocket.EventDMCreate, payload)
+
+		// subscribe all of the user's clients to the new conversation
+		for _, client := range hub.GetUserClients(participant.UserID) {
+			hub.SubscribeToConversation(client, conv.ID)
+		}
+	}
 }
