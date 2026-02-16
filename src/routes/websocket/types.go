@@ -99,6 +99,7 @@ type ReadyPayload struct {
 	User      UserBrief            `json:"user"`
 	SessionID string               `json:"session_id"`
 	Users     []UserWithPresence   `json:"users"`
+	Status    string               `json:"status"` // user's saved status preference
 }
 
 type UserWithPresence struct {

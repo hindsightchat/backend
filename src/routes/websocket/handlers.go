@@ -102,7 +102,13 @@ func (h *Hub) handleIdentify(client *Client, msg *Message) {
 		log.Printf("[ws] failed to load subscriptions: %v", err)
 	}
 
-	h.presence.SetOnline(userID, "online", nil)
+	// use saved status preference (default to online if empty)
+	status := user.Status
+	if status == "" {
+		status = "online"
+	}
+
+	h.presence.SetOnline(userID, status, nil)
 
 	// load all relevant users with presence
 	users := h.loadRelevantUsers(userID)
@@ -113,10 +119,11 @@ func (h *Hub) handleIdentify(client *Client, msg *Message) {
 			User:      *userBrief,
 			SessionID: client.sessionID,
 			Users:     users,
+			Status:    status,
 		},
 	})
 
-	go h.broadcastPresenceChange(userID, "online", &types.Activity{})
+	go h.broadcastPresenceChange(userID, status, &types.Activity{})
 
 	log.Printf("[ws] user identified: %s (%s)", user.Username, userID)
 }
@@ -289,6 +296,11 @@ func (h *Hub) handlePresenceUpdate(client *Client, msg *Message) {
 
 	h.presence.SetOnline(client.userID, payload.Status, payload.Activity)
 
+	// persist status to database (not activity, that's session-based)
+	go func() {
+		database.DB.Model(&database.User{}).Where("id = ?", client.userID).Update("status", payload.Status)
+	}()
+
 	go h.broadcastPresenceChange(client.userID, payload.Status, payload.Activity)
 }
 
@@ -310,12 +322,12 @@ func (h *Hub) handleTypingStart(client *Client, msg *Message) {
 		if !client.IsInServer(*payload.ServerID) {
 			return
 		}
-		h.DispatchToServer(*payload.ServerID, EventTypingStart, payload)
+		h.DispatchTypingToChannel(*payload.ServerID, *payload.ChannelID, EventTypingStart, payload)
 	} else if payload.ConversationID != nil {
 		if !client.IsInConversation(*payload.ConversationID) {
 			return
 		}
-		h.DispatchToConversation(*payload.ConversationID, EventTypingStart, payload)
+		h.DispatchTypingToConversation(*payload.ConversationID, EventTypingStart, payload)
 	}
 }
 
@@ -337,12 +349,12 @@ func (h *Hub) handleTypingStop(client *Client, msg *Message) {
 		if !client.IsInServer(*payload.ServerID) {
 			return
 		}
-		h.DispatchToServer(*payload.ServerID, EventTypingStop, payload)
+		h.DispatchTypingToChannel(*payload.ServerID, *payload.ChannelID, EventTypingStop, payload)
 	} else if payload.ConversationID != nil {
 		if !client.IsInConversation(*payload.ConversationID) {
 			return
 		}
-		h.DispatchToConversation(*payload.ConversationID, EventTypingStop, payload)
+		h.DispatchTypingToConversation(*payload.ConversationID, EventTypingStop, payload)
 	}
 }
 

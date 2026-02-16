@@ -259,6 +259,31 @@ func (h *Hub) DispatchDMMessage(convID uuid.UUID, fullPayload DMMessagePayload) 
 	}
 }
 
+// focus-aware dispatch for typing events (only sends to focused clients)
+func (h *Hub) DispatchTypingToConversation(convID uuid.UUID, event EventType, payload TypingPayload) {
+	h.mu.RLock()
+	clients := h.conversationClients[convID]
+	h.mu.RUnlock()
+
+	for client := range clients {
+		if client.IsFocusedOnConversation(convID) {
+			client.SendDispatch(event, payload)
+		}
+	}
+}
+
+func (h *Hub) DispatchTypingToChannel(serverID, channelID uuid.UUID, event EventType, payload TypingPayload) {
+	h.mu.RLock()
+	clients := h.serverClients[serverID]
+	h.mu.RUnlock()
+
+	for client := range clients {
+		if client.IsFocusedOnChannel(channelID) {
+			client.SendDispatch(event, payload)
+		}
+	}
+}
+
 // query methods
 func (h *Hub) GetOnlineUsers() []uuid.UUID {
 	h.mu.RLock()

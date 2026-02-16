@@ -30,6 +30,8 @@ type User struct {
 	ProfilePicURL string `gorm:"type:varchar(255)"` // URL to profile picture
 
 	IsDomainVerified bool `gorm:"not null;default:false"`
+	
+	Status string `gorm:"type:varchar(20);not null;default:'online'"`
 
 	// Relations
 	Tokens            []UserToken      `gorm:"foreignKey:UserID"`
