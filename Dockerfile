@@ -20,11 +20,11 @@ RUN apk add --no-cache  \
     curl \
     && rm -rf /var/cache/apk/* 
 
-# install go lang
-RUN wget https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz && \
-    rm go${GO_VERSION}.linux-amd64.tar.gz
-
+RUN GOARCH=$(apk --print-arch | grep -q "x86_64" && echo "amd64" || echo "arm64") && \
+    wget https://dl.google.com/go/go${GO_VERSION}.linux-${GOARCH}.tar.gz && \
+    tar -C /usr/local -xzf go${GO_VERSION}.linux-${GOARCH}.tar.gz && \
+    rm go${GO_VERSION}.linux-${GOARCH}.tar.gz
+    
 ENV PATH="/usr/local/go/bin:${PATH}"
 
 COPY go.mod go.sum ./
